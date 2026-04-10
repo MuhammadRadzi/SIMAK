@@ -23,7 +23,7 @@ Aplikasi web untuk melacak, mengelola, dan memvisualisasikan seluruh aktivitas s
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/USERNAME/simak.git
+git clone https://github.com/MuhammadRadzi/simak.git
 cd simak
 ```
 
