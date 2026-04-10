@@ -286,7 +286,7 @@ INSERT INTO users (nama, username, email, password, role) VALUES
     'Super Administrator',
     'superadmin',
     'superadmin@simak.local',
-    '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.ucrm3ymed',
+    '$2y$12$pZLcbEJu/chvFy.BydfRGOSEMQGU6.lq9qATDSn6I5FO6Ibj449Ny',
     'super_admin'
 );
 
