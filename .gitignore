@@ -1,0 +1,27 @@
+# Kredensial & Keamanan
+credentials/
+credentials/service-account.json
+config/database.php
+
+# Upload temp
+uploads/*
+!uploads/.gitkeep
+
+# Vendor (Google API Client)
+vendor/
+
+# Environment
+.env
+*.env
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# PHP
+*.log
+error_log

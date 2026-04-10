@@ -1,13 +1,13 @@
 <?php
 // ============================================================
-//  SIMAK — Konfigurasi Database
-//  File ini di-exclude dari Git (.gitignore)
-//  Salin database.example.php dan rename jadi database.php
+//  SIMAK — Template Konfigurasi Database
+//  Salin file ini, rename jadi database.php, lalu isi sesuai
+//  environment kamu. File database.php sudah di-.gitignore
 // ============================================================
 
 define('DB_HOST', 'localhost');
-define('DB_USER', 'root');          // Ganti sesuai user MySQL kamu
-define('DB_PASS', '');              // Ganti sesuai password MySQL kamu
+define('DB_USER', 'root');
+define('DB_PASS', '');
 define('DB_NAME', 'simak_db');
 define('DB_CHARSET', 'utf8mb4');
 
