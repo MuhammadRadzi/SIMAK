@@ -1,0 +1,191 @@
+/* ============================================================
+   SIMAK — Auth CSS (Login Page)
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --primary:       #2563eb;
+    --primary-dark:  #1d4ed8;
+    --primary-light: #eff6ff;
+    --danger:        #dc2626;
+    --danger-light:  #fef2f2;
+    --success:       #16a34a;
+    --success-light: #f0fdf4;
+    --gray-50:       #f8fafc;
+    --gray-100:      #f1f5f9;
+    --gray-200:      #e2e8f0;
+    --gray-400:      #94a3b8;
+    --gray-500:      #64748b;
+    --gray-700:      #334155;
+    --gray-900:      #0f172a;
+    --radius:        12px;
+    --shadow:        0 4px 24px rgba(0,0,0,.08);
+    --shadow-lg:     0 8px 40px rgba(0,0,0,.12);
+}
+
+body.auth-body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.auth-wrapper {
+    width: 100%;
+    max-width: 420px;
+}
+
+.auth-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    box-shadow: var(--shadow-lg);
+}
+
+/* Brand */
+.auth-brand {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-logo {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1rem;
+}
+
+.auth-logo svg { width: 100%; height: 100%; }
+
+.auth-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--gray-900);
+    letter-spacing: -0.02em;
+}
+
+.auth-subtitle {
+    font-size: .8rem;
+    color: var(--gray-500);
+    margin-top: .25rem;
+    line-height: 1.4;
+}
+
+/* Alert */
+.alert {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .75rem 1rem;
+    border-radius: 8px;
+    font-size: .875rem;
+    margin-bottom: 1.25rem;
+    font-weight: 500;
+}
+
+.alert-error {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid #fecaca;
+}
+
+.alert-success {
+    background: var(--success-light);
+    color: var(--success);
+    border: 1px solid #bbf7d0;
+}
+
+/* Form */
+.auth-form { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.form-group { display: flex; flex-direction: column; gap: .375rem; }
+
+.form-label {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: .875rem;
+    color: var(--gray-400);
+    pointer-events: none;
+    flex-shrink: 0;
+}
+
+.form-input {
+    width: 100%;
+    padding: .75rem .875rem .75rem 2.75rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 10px;
+    font-size: .9375rem;
+    color: var(--gray-900);
+    background: var(--gray-50);
+    transition: border-color .2s, box-shadow .2s;
+    outline: none;
+}
+
+.form-input:focus {
+    border-color: var(--primary);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+
+.form-input::placeholder { color: var(--gray-400); }
+
+.toggle-password {
+    position: absolute;
+    right: .875rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--gray-400);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color .2s;
+}
+
+.toggle-password:hover { color: var(--primary); }
+
+/* Button */
+.btn-login {
+    width: 100%;
+    padding: .875rem;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s, transform .1s, box-shadow .2s;
+    margin-top: .25rem;
+    letter-spacing: .01em;
+    box-shadow: 0 4px 12px rgba(37,99,235,.3);
+}
+
+.btn-login:hover {
+    background: var(--primary-dark);
+    box-shadow: 0 6px 16px rgba(37,99,235,.4);
+}
+
+.btn-login:active { transform: translateY(1px); }
+
+/* Footer */
+.auth-footer {
+    text-align: center;
+    font-size: .75rem;
+    color: var(--gray-400);
+    margin-top: 2rem;
+}
