@@ -37,3 +37,4 @@ define('KONDISI_BUTUH_PERBAIKAN','butuh_perbaikan');
 
 // Autoload config & DB
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/google-drive.php';
