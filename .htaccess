@@ -1,0 +1,11 @@
+# SIMAK — Apache Config
+Options -Indexes
+
+# Proteksi file sensitif
+<FilesMatch "^(database\.php|service-account\.json|composer\.lock|\.env)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Redirect root ke index.php
+DirectoryIndex index.php

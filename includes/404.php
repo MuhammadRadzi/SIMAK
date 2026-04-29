@@ -8,7 +8,7 @@ if (!defined('BASE_URL')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>403 — Akses Ditolak | <?= APP_NAME ?></title>
+    <title>404 — Halaman Tidak Ditemukan | <?= APP_NAME ?></title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/main.css">
     <style>
         body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--gray-100); }
@@ -20,9 +20,9 @@ if (!defined('BASE_URL')) {
 </head>
 <body>
     <div class="error-box">
-        <div class="error-code">403</div>
-        <h1>Akses Ditolak</h1>
-        <p>Kamu tidak memiliki izin untuk mengakses halaman ini.</p>
+        <div class="error-code">404</div>
+        <h1>Halaman Tidak Ditemukan</h1>
+        <p>Halaman yang kamu cari tidak ada atau telah dipindahkan.</p>
         <a href="<?= BASE_URL ?>/modules/dashboard/index.php" class="btn btn-primary">← Kembali ke Dashboard</a>
     </div>
 </body>

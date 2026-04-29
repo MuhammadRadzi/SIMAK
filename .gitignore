@@ -1,13 +1,17 @@
-# Kredensial & Keamanan
-credentials/
+# ============================================================
+#  SIMAK — .gitignore
+# ============================================================
+
+# Kredensial & Keamanan (JANGAN commit!)
 credentials/service-account.json
 config/database.php
 
 # Upload temp
 uploads/*
 !uploads/.gitkeep
+!uploads/.htaccess
 
-# Vendor (Google API Client)
+# Vendor (Composer)
 vendor/
 
 # Environment
@@ -17,11 +21,22 @@ vendor/
 # OS Files
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# IDE
+# IDE / Editor
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
 
-# PHP
+# PHP Logs
 *.log
 error_log
+php_errorlog
+
+# Backup files
+*.bak
+*.backup
+*.sql.gz
