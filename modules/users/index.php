@@ -14,11 +14,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'delete') {
     if ($delId === (int)$me['id']) {
         setFlash('error', 'Tidak dapat menghapus akun sendiri.');
     } else {
-        $stmt = $db->prepare("DELETE FROM users WHERE id = ? AND role != 'super_admin'");
-        $stmt->bind_param('i', $delId);
-        $stmt->execute();
-        $stmt->close();
-        setFlash('success', 'Pengguna berhasil dihapus.');
+        $chk = $db->prepare("SELECT role FROM users WHERE id = ?");
+        $chk->bind_param('i', $delId); $chk->execute();
+        $target = $chk->get_result()->fetch_assoc(); $chk->close();
+
+        if (!$target || $target['role'] === 'super_admin') {
+            setFlash('error', 'Super Admin tidak dapat dihapus.');
+        } else {
+            // Nullify FK references sebelum hapus
+            $nullQueries = [
+                "UPDATE rabuan              SET created_by   = NULL WHERE created_by   = ?",
+                "UPDATE mentoring           SET created_by   = NULL WHERE created_by   = ?",
+                "UPDATE operasional         SET created_by   = NULL WHERE created_by   = ?",
+                "UPDATE binjas              SET created_by   = NULL WHERE created_by   = ?",
+                "UPDATE presensi            SET dicatat_oleh = NULL WHERE dicatat_oleh = ?",
+                "UPDATE binjas_nilai        SET input_by     = NULL WHERE input_by     = ?",
+                "UPDATE rabuan_dokumen      SET uploaded_by  = NULL WHERE uploaded_by  = ?",
+                "UPDATE mentoring_dokumen   SET uploaded_by  = NULL WHERE uploaded_by  = ?",
+                "UPDATE operasional_laporan SET uploaded_by  = NULL WHERE uploaded_by  = ?",
+                "UPDATE operasional_pra     SET updated_by   = NULL WHERE updated_by   = ?",
+                "UPDATE settings            SET updated_by   = NULL WHERE updated_by   = ?",
+                "UPDATE users               SET created_by   = NULL WHERE created_by   = ?",
+            ];
+            foreach ($nullQueries as $sql) {
+                $stmt = $db->prepare($sql);
+                $stmt->bind_param('i', $delId);
+                $stmt->execute(); $stmt->close();
+            }
+            $stmt = $db->prepare("DELETE FROM users WHERE id = ? AND role != 'super_admin'");
+            $stmt->bind_param('i', $delId);
+            $stmt->execute(); $stmt->close();
+            setFlash('success', 'Pengguna berhasil dihapus.');
+        }
     }
     redirect(BASE_URL . '/modules/users/index.php');
 }
@@ -28,9 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'toggle') {
     if (!csrf_verify()) { setFlash('error', 'Permintaan tidak valid.'); redirect(BASE_URL . '/modules/users/index.php'); }
     $togId = postInt('user_id');
     $stmt  = $db->prepare("UPDATE users SET is_active = NOT is_active WHERE id = ? AND role != 'super_admin'");
-    $stmt->bind_param('i', $togId);
-    $stmt->execute();
-    $stmt->close();
+    $stmt->bind_param('i', $togId); $stmt->execute(); $stmt->close();
     setFlash('success', 'Status pengguna diperbarui.');
     redirect(BASE_URL . '/modules/users/index.php');
 }
@@ -38,8 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'toggle') {
 $users = $db->query(
     "SELECT u.id, u.nama, u.username, u.email, u.role, u.is_active, u.created_at,
             c.nama AS created_by_nama
-     FROM users u
-     LEFT JOIN users c ON c.id = u.created_by
+     FROM users u LEFT JOIN users c ON c.id = u.created_by
      ORDER BY u.created_at DESC"
 )->fetch_all(MYSQLI_ASSOC);
 
@@ -67,62 +91,41 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         <div class="table-responsive">
             <table class="table">
                 <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Nama</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Dibuat</th>
-                        <th>Aksi</th>
-                    </tr>
+                    <tr><th>#</th><th>Nama</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Dibuat</th><th>Aksi</th></tr>
                 </thead>
                 <tbody>
                 <?php foreach ($users as $i => $u): ?>
-                    <tr>
-                        <td><?= $i + 1 ?></td>
-                        <td><strong><?= e($u['nama']) ?></strong></td>
-                        <td><code><?= e($u['username']) ?></code></td>
-                        <td><?= e($u['email']) ?></td>
-                        <td>
-                            <?php if ($u['role'] === 'super_admin'): ?>
-                                <span class="badge badge-primary">Super Admin</span>
-                            <?php else: ?>
-                                <span class="badge badge-secondary">Admin</span>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?= $u['is_active']
-                                ? '<span class="badge badge-success">Aktif</span>'
-                                : '<span class="badge badge-danger">Nonaktif</span>'
-                            ?>
-                        </td>
-                        <td><?= formatTanggal($u['created_at'], 'd M Y') ?></td>
-                        <td>
-                            <?php if ($u['role'] !== 'super_admin'): ?>
-                            <div class="action-btns">
-                                <a href="<?= BASE_URL ?>/modules/users/edit.php?id=<?= $u['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
-                                <form method="POST" style="display:inline" onsubmit="return confirm('Toggle status pengguna ini?')">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="toggle">
-                                    <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                                    <button type="submit" class="btn btn-sm btn-info">
-                                        <?= $u['is_active'] ? 'Nonaktifkan' : 'Aktifkan' ?>
-                                    </button>
-                                </form>
-                                <form method="POST" style="display:inline" onsubmit="return confirm('Hapus pengguna ini?')">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                                    <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
-                                </form>
-                            </div>
-                            <?php else: ?>
-                                <span class="text-muted">—</span>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
+                <tr>
+                    <td><?= $i + 1 ?></td>
+                    <td><strong><?= e($u['nama']) ?></strong></td>
+                    <td><code><?= e($u['username']) ?></code></td>
+                    <td><?= e($u['email']) ?></td>
+                    <td><?= $u['role'] === 'super_admin' ? '<span class="badge badge-primary">Super Admin</span>' : '<span class="badge badge-secondary">Admin</span>' ?></td>
+                    <td><?= $u['is_active'] ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-danger">Nonaktif</span>' ?></td>
+                    <td><?= formatTanggal($u['created_at'], 'd M Y') ?></td>
+                    <td>
+                        <?php if ($u['role'] !== 'super_admin'): ?>
+                        <div class="action-btns">
+                            <a href="<?= BASE_URL ?>/modules/users/edit.php?id=<?= $u['id'] ?>" class="btn btn-sm btn-warning">Edit</a>
+                            <form method="POST" style="display:inline" onsubmit="return confirm('Toggle status pengguna ini?')">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="action" value="toggle">
+                                <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-info"><?= $u['is_active'] ? 'Nonaktifkan' : 'Aktifkan' ?></button>
+                            </form>
+                            <form method="POST" style="display:inline"
+                                  onsubmit="return confirm('Hapus pengguna ini? Data kegiatan yang dibuat oleh pengguna ini tidak akan ikut terhapus.')">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-danger">Hapus</button>
+                            </form>
+                        </div>
+                        <?php else: ?>
+                            <span class="text-muted">—</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
                 <?php endforeach; ?>
                 </tbody>
             </table>
