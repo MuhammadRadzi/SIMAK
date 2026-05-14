@@ -1,12 +1,17 @@
 <?php
 if (!defined("GDRIVE_CREDENTIALS")) require_once __DIR__ . "/../config/config.php";
 if (!defined("GDRIVE_CREDENTIALS")) require_once __DIR__ . "/../config/google-drive.php";
+
+// Load Google API autoload sekali di sini — WAJIB sebelum semua class Google dipakai
+if (file_exists(BASE_PATH . '/vendor/autoload.php')) {
+    require_once BASE_PATH . '/vendor/autoload.php';
+}
+
 // ============================================================
 //  SIMAK — Google Drive Helper
 // ============================================================
 
 function getGDriveClient(): Google\Client {
-    require_once BASE_PATH . '/vendor/autoload.php';
     $client = new Google\Client();
     $client->setAuthConfig(GDRIVE_CREDENTIALS);
     $client->addScope(Google\Service\Drive::DRIVE);
@@ -50,8 +55,8 @@ function uploadToGDrive(string $localPath, string $fileName, string $modul): arr
             'supportsAllDrives' => true,
         ]);
         try {
-            $permission = new Google\Service\Drive\Permission(['type'=>'anyone','role'=>'reader']);
-            $service->permissions->create($file->id, $permission, ['supportsAllDrives'=>true]);
+            $permission = new Google\Service\Drive\Permission(['type' => 'anyone', 'role' => 'reader']);
+            $service->permissions->create($file->id, $permission, ['supportsAllDrives' => true]);
         } catch (Exception $permErr) {
             error_log('[SIMAK GDrive Permission] ' . $permErr->getMessage());
         }
@@ -62,10 +67,6 @@ function uploadToGDrive(string $localPath, string $fileName, string $modul): arr
     }
 }
 
-/**
- * Hapus file dari Google Drive
- * Fix: autoload dipanggil di getGDriveClient(), supportsAllDrives = true
- */
 function deleteFromGDrive(string $fileId): bool {
     if (empty($fileId) || !file_exists(GDRIVE_CREDENTIALS)) return false;
     try {
@@ -89,20 +90,27 @@ function handlePdfUpload(string $inputName, string $modul, string $prefix = ''):
     if ($file['size'] > MAX_UPLOAD_SIZE) {
         return ['error' => 'Ukuran file melebihi batas maksimal (10 MB).'];
     }
+
+    // Validasi MIME — finfo_close() dihapus (deprecated PHP 8.5, objek di-free otomatis)
     $finfo    = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
+    // finfo_close tidak dipanggil — PHP 8.5+ handle otomatis
+
     if ($mimeType !== 'application/pdf') {
         return ['error' => 'Hanya file PDF yang diperbolehkan.'];
     }
+
     $safeName  = $prefix . '_' . date('Ymd_His') . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file['name']);
     $localPath = UPLOAD_DIR . $safeName;
+
     if (!move_uploaded_file($file['tmp_name'], $localPath)) {
         return ['error' => 'Gagal menyimpan file sementara.'];
     }
+
     $result = uploadToGDrive($localPath, $safeName, $modul);
     if (file_exists($localPath)) unlink($localPath);
     if (isset($result['error'])) return $result;
+
     return [
         'nama_file'      => $file['name'],
         'gdrive_file_id' => $result['file_id'],
