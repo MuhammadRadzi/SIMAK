@@ -6,6 +6,7 @@ if (!defined("GDRIVE_CREDENTIALS")) require_once __DIR__ . "/../config/google-dr
 // ============================================================
 
 function getGDriveClient(): Google\Client {
+    require_once BASE_PATH . '/vendor/autoload.php';
     $client = new Google\Client();
     $client->setAuthConfig(GDRIVE_CREDENTIALS);
     $client->addScope(Google\Service\Drive::DRIVE);
@@ -35,7 +36,6 @@ function uploadToGDrive(string $localPath, string $fileName, string $modul): arr
         return ['error' => 'Folder Google Drive untuk modul ' . $modul . ' belum dikonfigurasi.'];
     }
     try {
-        require_once BASE_PATH . '/vendor/autoload.php';
         $service      = getGDriveService();
         $fileMetadata = new Google\Service\Drive\DriveFile([
             'name'    => $fileName,
@@ -57,24 +57,23 @@ function uploadToGDrive(string $localPath, string $fileName, string $modul): arr
         }
         return ['file_id' => $file->id, 'link' => $file->webViewLink];
     } catch (Exception $e) {
-        error_log('[SIMAK GDrive] ' . $e->getMessage());
+        error_log('[SIMAK GDrive Upload] ' . $e->getMessage());
         return ['error' => 'Upload ke Google Drive gagal: ' . $e->getMessage()];
     }
 }
 
 /**
- * BUG FIX: Hapus file dari Google Drive
- * Sebelumnya silent fail karena supportsAllDrives tidak di-set
+ * Hapus file dari Google Drive
+ * Fix: autoload dipanggil di getGDriveClient(), supportsAllDrives = true
  */
 function deleteFromGDrive(string $fileId): bool {
     if (empty($fileId) || !file_exists(GDRIVE_CREDENTIALS)) return false;
     try {
-        require_once BASE_PATH . '/vendor/autoload.php';
         $service = getGDriveService();
         $service->files->delete($fileId, ['supportsAllDrives' => true]);
         return true;
     } catch (Exception $e) {
-        error_log('[SIMAK GDrive Delete] ' . $e->getMessage());
+        error_log('[SIMAK GDrive Delete] fileId=' . $fileId . ' error=' . $e->getMessage());
         return false;
     }
 }

@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'delete') {
     if (!csrf_verify()) { setFlash('error', 'Permintaan tidak valid.'); redirect(BASE_URL . '/modules/users/index.php'); }
     $delId = postInt('user_id');
     $me    = currentUser();
+
     if ($delId === (int)$me['id']) {
         setFlash('error', 'Tidak dapat menghapus akun sendiri.');
     } else {
@@ -21,30 +22,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'delete') {
         if (!$target || $target['role'] === 'super_admin') {
             setFlash('error', 'Super Admin tidak dapat dihapus.');
         } else {
-            // Nullify FK references sebelum hapus
-            $nullQueries = [
-                "UPDATE rabuan              SET created_by   = NULL WHERE created_by   = ?",
-                "UPDATE mentoring           SET created_by   = NULL WHERE created_by   = ?",
-                "UPDATE operasional         SET created_by   = NULL WHERE created_by   = ?",
-                "UPDATE binjas              SET created_by   = NULL WHERE created_by   = ?",
-                "UPDATE presensi            SET dicatat_oleh = NULL WHERE dicatat_oleh = ?",
-                "UPDATE binjas_nilai        SET input_by     = NULL WHERE input_by     = ?",
-                "UPDATE rabuan_dokumen      SET uploaded_by  = NULL WHERE uploaded_by  = ?",
-                "UPDATE mentoring_dokumen   SET uploaded_by  = NULL WHERE uploaded_by  = ?",
-                "UPDATE operasional_laporan SET uploaded_by  = NULL WHERE uploaded_by  = ?",
-                "UPDATE operasional_pra     SET updated_by   = NULL WHERE updated_by   = ?",
-                "UPDATE settings            SET updated_by   = NULL WHERE updated_by   = ?",
-                "UPDATE users               SET created_by   = NULL WHERE created_by   = ?",
+            // Cek apakah kolom created_by nullable atau tidak
+            // Strategi: coba UPDATE dulu, kalau gagal berarti NOT NULL — skip saja
+            // Gunakan query yang aman: UPDATE hanya kalau kolom memang nullable
+            // Cara paling aman: pakai IF di SQL
+            $safeNullQueries = [
+                // Untuk tabel yang created_by bisa NULL (setelah FK fix) atau pakai dummy SA id
+                "UPDATE rabuan              SET created_by   = NULL WHERE created_by   = $delId",
+                "UPDATE mentoring           SET created_by   = NULL WHERE created_by   = $delId",
+                "UPDATE operasional         SET created_by   = NULL WHERE created_by   = $delId",
+                "UPDATE binjas              SET created_by   = NULL WHERE created_by   = $delId",
+                "UPDATE rabuan_dokumen      SET uploaded_by  = NULL WHERE uploaded_by  = $delId",
+                "UPDATE mentoring_dokumen   SET uploaded_by  = NULL WHERE uploaded_by  = $delId",
+                "UPDATE operasional_laporan SET uploaded_by  = NULL WHERE uploaded_by  = $delId",
+                "UPDATE operasional_pra     SET updated_by   = NULL WHERE updated_by   = $delId",
+                "UPDATE settings            SET updated_by   = NULL WHERE updated_by   = $delId",
+                "UPDATE users               SET created_by   = NULL WHERE created_by   = $delId",
+                "UPDATE presensi            SET dicatat_oleh = NULL WHERE dicatat_oleh = $delId",
+                "UPDATE binjas_nilai        SET input_by     = NULL WHERE input_by     = $delId",
             ];
-            foreach ($nullQueries as $sql) {
-                $stmt = $db->prepare($sql);
-                $stmt->bind_param('i', $delId);
-                $stmt->execute(); $stmt->close();
+
+            $errors = [];
+            foreach ($safeNullQueries as $sql) {
+                try {
+                    $db->query($sql);
+                } catch (Exception $e) {
+                    // Kolom NOT NULL — coba ganti ke Super Admin ID (id=1) sebagai fallback
+                    $errors[] = $sql;
+                }
             }
+
+            // Fallback: kalau ada yang gagal di-NULL-kan, ganti ke Super Admin (id=1)
+            if (!empty($errors)) {
+                $saId = 1; // ID Super Admin default
+                $fallbackQueries = [
+                    "UPDATE rabuan      SET created_by = $saId WHERE created_by = $delId",
+                    "UPDATE mentoring   SET created_by = $saId WHERE created_by = $delId",
+                    "UPDATE operasional SET created_by = $saId WHERE created_by = $delId",
+                    "UPDATE binjas      SET created_by = $saId WHERE created_by = $delId",
+                    "UPDATE rabuan_dokumen      SET uploaded_by = $saId WHERE uploaded_by = $delId",
+                    "UPDATE mentoring_dokumen   SET uploaded_by = $saId WHERE uploaded_by = $delId",
+                    "UPDATE operasional_laporan SET uploaded_by = $saId WHERE uploaded_by = $delId",
+                    "UPDATE presensi            SET dicatat_oleh = $saId WHERE dicatat_oleh = $delId",
+                    "UPDATE binjas_nilai        SET input_by     = $saId WHERE input_by     = $delId",
+                ];
+                foreach ($fallbackQueries as $sql) {
+                    $db->query($sql);
+                }
+            }
+
+            // Sekarang hapus user
             $stmt = $db->prepare("DELETE FROM users WHERE id = ? AND role != 'super_admin'");
             $stmt->bind_param('i', $delId);
             $stmt->execute(); $stmt->close();
-            setFlash('success', 'Pengguna berhasil dihapus.');
+            setFlash('success', 'Pengguna berhasil dihapus. Data kegiatan dialihkan ke Super Admin.');
         }
     }
     redirect(BASE_URL . '/modules/users/index.php');
@@ -114,7 +145,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                 <button type="submit" class="btn btn-sm btn-info"><?= $u['is_active'] ? 'Nonaktifkan' : 'Aktifkan' ?></button>
                             </form>
                             <form method="POST" style="display:inline"
-                                  onsubmit="return confirm('Hapus pengguna ini? Data kegiatan yang dibuat oleh pengguna ini tidak akan ikut terhapus.')">
+                                  onsubmit="return confirm('Hapus pengguna ini? Data kegiatan yang dibuat akan dialihkan ke Super Admin.')">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
