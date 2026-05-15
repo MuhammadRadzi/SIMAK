@@ -57,11 +57,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'hapus_dok') {
         $dokData = $dok->get_result()->fetch_assoc();
         $dok->close();
         if ($dokData) {
-            deleteFromGDrive($dokData['gdrive_file_id']);
+            $driveResult = deleteFromGDrive($dokData['gdrive_file_id']);
             $del = $db->prepare("DELETE FROM rabuan_dokumen WHERE id = ?");
             $del->bind_param('i', $dokId);
             $del->execute(); $del->close();
-            setFlash('success', 'Dokumen berhasil dihapus.');
+
+            if ($driveResult['success']) {
+                setFlash('success', 'Dokumen berhasil dihapus dari sistem dan Google Drive.');
+            } else {
+                setFlash('warning', 'Dokumen dihapus dari sistem, namun gagal di Drive: ' . $driveResult['error']);
+            }
             redirect(BASE_URL . '/modules/rabuan/detail.php?id=' . $id);
         }
     }

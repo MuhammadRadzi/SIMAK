@@ -67,15 +67,31 @@ function uploadToGDrive(string $localPath, string $fileName, string $modul): arr
     }
 }
 
-function deleteFromGDrive(string $fileId): bool {
-    if (empty($fileId) || !file_exists(GDRIVE_CREDENTIALS)) return false;
+function deleteFromGDrive(string $fileId): array {
+    if (empty($fileId)) return ['success' => true];
+    
+    if (!file_exists(GDRIVE_CREDENTIALS)) {
+        return ['success' => false, 'error' => 'File kredensial tidak ditemukan.'];
+    }
+
     try {
         $service = getGDriveService();
-        $service->files->delete($fileId, ['supportsAllDrives' => true]);
-        return true;
+        $fileId  = trim($fileId);
+        
+        // Coba pindahkan ke sampah (trash) — lebih aman dan seringkali berhasil di Shared Drive
+        $file = new Google\Service\Drive\DriveFile();
+        $file->setTrashed(true);
+        $service->files->update($fileId, $file, ['supportsAllDrives' => true]);
+        
+        return ['success' => true];
     } catch (Exception $e) {
-        error_log('[SIMAK GDrive Delete] fileId=' . $fileId . ' error=' . $e->getMessage());
-        return false;
+        $msg = $e->getMessage();
+        // Jika error 404 (Not Found), anggap sudah terhapus
+        if (str_contains($msg, '404') || str_contains($msg, 'File not found')) {
+            return ['success' => true];
+        }
+        error_log('[SIMAK GDrive Delete Error] fileId=' . $fileId . ' error=' . $msg);
+        return ['success' => false, 'error' => $msg];
     }
 }
 

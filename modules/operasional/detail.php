@@ -127,6 +127,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'upload_laporan'
     }
 }
 
+// Hapus laporan
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'hapus_dok') {
+    if (!csrf_verify()) { $error = 'Permintaan tidak valid.'; }
+    else {
+        $dokId = postInt('dok_id');
+        $dok   = $db->prepare("SELECT gdrive_file_id FROM operasional_laporan WHERE id = ? AND operasional_id = ?");
+        $dok->bind_param('ii', $dokId, $id);
+        $dok->execute();
+        $dokData = $dok->get_result()->fetch_assoc();
+        $dok->close();
+
+        if ($dokData) {
+            $driveResult = deleteFromGDrive($dokData['gdrive_file_id']);
+            $stmt = $db->prepare("DELETE FROM operasional_laporan WHERE id = ?");
+            $stmt->bind_param('i', $dokId);
+            $stmt->execute(); $stmt->close();
+
+            if ($driveResult['success']) {
+                setFlash('success', 'Laporan berhasil dihapus dari sistem dan Google Drive.');
+            } else {
+                setFlash('warning', 'Laporan dihapus dari sistem, namun gagal di Drive: ' . $driveResult['error']);
+            }
+            redirect(BASE_URL . '/modules/operasional/detail.php?id=' . $id);
+        }
+    }
+}
+
 // Simpan kondisi alat (pasca)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('action') === 'save_kondisi') {
     if (!csrf_verify()) { $error = 'Permintaan tidak valid.'; }
@@ -435,9 +462,17 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             <div style="font-size:.8125rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><?= e($lap['nama_file']) ?></div>
                             <div style="font-size:.7rem; color:var(--gray-400);"><?= formatBytes($lap['ukuran_file']) ?> · <?= formatTanggal($lap['uploaded_at'], 'd M Y') ?> · <?= e($lap['uploader'] ?? '—') ?></div>
                         </div>
-                        <?php if ($lap['gdrive_link']): ?>
-                            <a href="<?= e($lap['gdrive_link']) ?>" target="_blank" class="btn btn-sm btn-primary">Buka</a>
-                        <?php endif; ?>
+                        <div style="display:flex; gap:.3rem; flex-shrink:0;">
+                            <?php if ($lap['gdrive_link']): ?>
+                                <a href="<?= e($lap['gdrive_link']) ?>" target="_blank" class="btn btn-sm btn-primary" title="Buka di Drive">Buka</a>
+                            <?php endif; ?>
+                            <form method="POST" style="display:inline" onsubmit="return confirmDelete('Hapus laporan ini dari sistem dan Google Drive?')">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="action" value="hapus_dok">
+                                <input type="hidden" name="dok_id" value="<?= $lap['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Hapus">✕</button>
+                            </form>
+                        </div>
                     </div>
                 <?php endforeach; ?>
                 </div>
