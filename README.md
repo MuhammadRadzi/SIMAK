@@ -100,7 +100,7 @@ Edit `config/database.php`, sesuaikan `DB_USER` dan `DB_PASS`.
 5. Di **Google Drive** (akun Workspace):
    - Buat **Shared Drive** baru (misal: `SIMAK`)
    - Buat subfolder: `Rabuan`, `Mentoring`, `Operasional`
-   - Klik kanan Shared Drive → **Manage members** → tambahkan email Service Account sebagai **Contributor**
+   - Klik kanan Shared Drive → **Manage members** → tambahkan email Service Account sebagai **Pengelola konten**
 6. Salin **Folder ID** masing-masing subfolder dari URL Drive
 7. Login SIMAK sebagai Super Admin → **Pengaturan** → paste Folder ID
 
