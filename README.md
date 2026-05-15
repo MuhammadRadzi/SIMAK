@@ -9,6 +9,8 @@
 
 Aplikasi web untuk melacak, mengelola, dan memvisualisasikan seluruh aktivitas siswa — mencakup Rapat Rutin (Rabuan), Mentoring, Kegiatan Lapangan (Operasional), dan Bina Jasmani (Binjas).
 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/4be75a9b-5c24-4bca-8a5a-a01e074b5edd" />
+
 ---
 
 ## ✨ Fitur Utama
